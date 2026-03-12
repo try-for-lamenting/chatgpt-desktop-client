@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ChatGPT Desktop Client</title>
+  <link rel="stylesheet" href="main.css">
+</head>
+<body>
+  <div id="toolbar">
+
+    <!-- Account switcher toggle — far left -->
+    <button class="tool-btn" id="accounts-toggle" title="Accounts (Alt+A)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="8" r="4"/><path d="M4 20v-1a8 8 0 0 1 16 0v1"/>
+      </svg>
+    </button>
+
+    <!-- New tab -->
+    <button id="new-tab-btn" title="New Tab (Ctrl+T)">
+      <svg width="13" height="13" viewBox="0 0 14 14">
+        <line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <!-- Refresh current tab -->
+    <button class="tool-btn" id="refresh-btn" title="Reload tab (F5)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"/>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+      </svg>
+    </button>
+
+    <!-- Tabs fill remaining space -->
+    <div id="tabs-wrap">
+      <div id="tabs-list"></div>
+    </div>
+
+    <!-- Help toggle -->
+    <button class="tool-btn" id="help-toggle" title="Help">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </button>
+
+    <!-- Shortcuts / Settings -->
+    <button class="tool-btn" id="preferences-toggle" title="Preferences">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+    </button>
+
+    <!-- Window controls — far right (hidden on macOS) -->
+    <div id="win-controls">
+      <button class="wc-btn" id="btn-minimize" title="Minimize">
+        <svg width="10" height="1" viewBox="0 0 10 1"><rect width="10" height="1.5" rx="1" fill="currentColor"/></svg>
+      </button>
+      <button class="wc-btn" id="btn-maximize" title="Maximize">
+        <svg width="10" height="10" viewBox="0 0 10 10"><rect x="0.75" y="0.75" width="8.5" height="8.5" rx="1.2" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+      </button>
+      <button class="wc-btn wc-close" id="btn-close" title="Close">
+        <svg width="10" height="10" viewBox="0 0 10 10">
+          <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Account switcher panel -->
+  <aside id="accounts-sidebar" class="closed">
+    <div class="sb-head">
+      <span class="sb-title">Account Switcher</span>
+      <button class="tool-btn" id="accounts-close" title="Close (Alt+A)">
+        <svg width="14" height="14" viewBox="0 0 14 14">
+          <line x1="1" y1="1" x2="13" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="13" y1="1" x2="1" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Save This Tab's Account</div>
+      <div class="row-gap">
+        <input type="text" id="account-name-input" placeholder="e.g. Work, Personal…" maxlength="60" autocomplete="off">
+        <button class="btn-primary" id="save-btn">Save</button>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Quick Actions</div>
+      <button class="action-row" id="clear-btn">
+        <span class="action-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+        </span>
+        <span>Clear This Tab's Cookies</span>
+      </button>
+      <button class="action-row" id="share-btn">
+        <span class="action-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </span>
+        <span>Copy Share Link</span>
+      </button>
+      <button class="action-row" id="import-btn">
+        <span class="action-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </span>
+        <span>Import Accounts</span>
+      </button>
+      <button class="action-row" id="export-btn">
+        <span class="action-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </span>
+        <span>Export Accounts</span>
+      </button>
+    </div>
+
+    <div class="sb-section sb-scroll">
+      <div class="sb-label">Saved Accounts</div>
+      <div id="accounts-list"></div>
+    </div>
+
+    <div class="sb-foot" id="accounts-sidebar-footer">⊞+Alt+/ · toggle companion &nbsp;|&nbsp; Alt+A · toggle this panel</div>
+  </aside>
+
+  <!-- Help panel -->
+  <aside id="help-sidebar" class="closed">
+    <div class="sb-head">
+      <span class="sb-title">Help &amp; Usage</span>
+      <button class="tool-btn" id="help-close-btn" title="Close">
+        <svg width="13" height="13" viewBox="0 0 14 14">
+          <line x1="1" y1="1" x2="13" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="13" y1="1" x2="1" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="help-body" id="help-body-content">
+
+      <div class="help-section" data-section="tabs">
+        <div class="help-section-title" data-title-key="tabs">Tabs</div>
+        <p>Click <span class="help-icon-inline"><svg width="11" height="11" viewBox="0 0 14 14"><line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span> or press <kbd id="help-kbd-newTab">Ctrl+T</kbd> to open a new tab. Each tab runs an isolated browser session.</p>
+        <p>Switch tabs with <kbd id="help-kbd-nextTab">Ctrl+Tab</kbd> / <kbd id="help-kbd-prevTab">Ctrl+Shift+Tab</kbd>. Close with <kbd id="help-kbd-closeTab">Ctrl+W</kbd>. Drag to reorder. Press <kbd id="help-kbd-reloadTab">Ctrl+R</kbd> or click <span class="help-icon-inline"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></span> to reload.</p>
+      </div>
+
+      <div class="help-section" data-section="accounts">
+        <div class="help-section-title" data-title-key="accounts">Adding Accounts</div>
+        <p>Each saved account is a snapshot of your login cookies. To add one:</p>
+        <ol class="help-ol">
+          <li>Open the Account Switcher via <kbd id="help-kbd-toggleAcct1">Alt+A</kbd> or the <span class="help-icon-inline"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a8 8 0 0 1 16 0v1"/></svg></span> button.</li>
+          <li>Click <strong>Clear Cookies</strong> to sign out the current tab.</li>
+          <li>Sign into ChatGPT with the account you want to save.</li>
+          <li>Type a name (e.g. <em>Work</em>) and click <strong>Save</strong>.</li>
+          <li>Repeat from step 2 for each additional account.</li>
+        </ol>
+      </div>
+
+      <div class="help-section" data-section="switching">
+        <div class="help-section-title" data-title-key="switching">Switching Accounts</div>
+        <p>In the Account Switcher each saved account shows two icon buttons:</p>
+        <p><span class="help-icon-inline"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg></span> <strong>Load with Context</strong> — restores cookies, grabs a share link of the current chat, and reopens it under the new account.</p>
+        <p><span class="help-icon-inline"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></span> <strong>Delete</strong> — permanently removes the saved account.</p>
+        <p>Drag the grip handle on each row to reorder. Use <strong>Import / Export</strong> to back up as JSON.</p>
+      </div>
+
+      <div class="help-section" data-section="companion">
+        <div class="help-section-title" data-title-key="companion">Companion Window</div>
+        <p>Press <kbd id="companion-shortcut-kbd">⊞+Alt+/</kbd> to toggle the floating Companion — a slim overlay that stays on top for quick queries.</p>
+        <p>Inside the companion, <kbd id="help-kbd-toggleAcct2">Alt+A</kbd> opens the account panel, <span class="help-icon-inline"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="10" y1="11" x2="14" y2="11"/></svg></span> starts a new chat, and <span class="help-icon-inline"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span> moves the session to a main tab.</p>
+      </div>
+
+      <div class="help-section" data-section="sharing">
+        <div class="help-section-title" data-title-key="sharing">Sharing &amp; Cookies</div>
+        <p><strong>Copy Share Link</strong> grabs a public URL for the active conversation and copies it to your clipboard.</p>
+        <p><strong>Clear Cookies</strong> signs out the current tab without affecting other tabs or saved accounts.</p>
+      </div>
+
+      <div class="help-section">
+        <p style="font-size:11.5px;color:var(--muted);margin:0">Customize shortcuts via the <span class="help-icon-inline"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> settings button.</p>
+      </div>
+
+    </div>
+  </aside>
+
+  <div id="toast-area"></div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

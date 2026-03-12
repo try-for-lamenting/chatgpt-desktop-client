@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Companion</title>
+  <style>
+    :root {
+      --toolbar-h: 44px;
+      --bg: #111111;
+      --toolbar: #191919;
+      --border: #252525;
+      --text: #e4e4e7;
+      --muted: #71717a;
+      --accent: #6366f1;
+      --accent-h: #4f51d8;
+      --surface: #1e1e1e;
+      --surface2: #252525;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --info: #0ea5e9;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button {
+      cursor: pointer;
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    /* Toolbar */
+    #toolbar {
+      height: var(--toolbar-h);
+      background: var(--toolbar);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 4px 0 8px;
+      -webkit-app-region: drag;
+      position: relative;
+      z-index: 20;
+      flex-shrink: 0;
+    }
+
+    body.mac #toolbar {
+      padding-left: 76px;
+    }
+
+    body.mac #win-btns {
+      display: none;
+    }
+
+    #label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .6px;
+      text-transform: uppercase;
+      color: var(--muted);
+      -webkit-app-region: drag;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-right: 4px;
+    }
+
+    #toolbar-right {
+      display: flex;
+      gap: 2px;
+      align-items: center;
+      -webkit-app-region: no-drag;
+      flex-shrink: 0;
+    }
+
+    .tb-btn {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .12s, color .12s;
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+    }
+
+    .tb-btn:hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .tb-btn.active {
+      background: rgba(99, 102, 241, .18);
+      color: var(--accent);
+    }
+
+    #win-btns {
+      display: flex;
+      gap: 1px;
+      align-items: center;
+      -webkit-app-region: no-drag;
+      flex-shrink: 0;
+    }
+
+    .wc {
+      width: 28px;
+      height: 26px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .12s, color .12s;
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+    }
+
+    .wc:hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .wc.cls:hover {
+      background: var(--danger) !important;
+      color: #fff !important;
+    }
+
+    /* Account panel */
+    #accounts-panel {
+      background: #151515;
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height .2s cubic-bezier(.4, 0, .2, 1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .65);
+      z-index: 10;
+      position: relative;
+    }
+
+    #accounts-panel.open {
+      max-height: 260px;
+    }
+
+    .ap-inner {
+      padding: 6px 8px 8px;
+      max-height: 220px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--surface2) transparent;
+    }
+
+    .ap-inner::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .ap-inner::-webkit-scrollbar-thumb {
+      background: var(--surface2);
+      border-radius: 2px;
+    }
+
+    /* Compact account rows */
+    .account-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 4px 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      margin-bottom: 4px;
+      transition: border-color .12s;
+    }
+
+    .account-row:hover {
+      border-color: #333;
+    }
+
+    .account-name {
+      font-size: 12px;
+      font-weight: 500;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .account-btns {
+      display: flex;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+
+    .ab-icon {
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .12s, color .12s;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .ab-load {
+      background: rgba(99, 102, 241, .15);
+      color: var(--accent);
+    }
+
+    .ab-load:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .ap-empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 16px 12px;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    /* Inline toasts */
+    #toast-area {
+      position: fixed;
+      top: calc(var(--toolbar-h) + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .toast {
+      background: #252525;
+      color: #e4e4e7;
+      border: 1px solid #333;
+      padding: 7px 16px;
+      border-radius: 9px;
+      font-size: 12.5px;
+      font-weight: 500;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, .55);
+      white-space: nowrap;
+      max-width: 320px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity .16s ease, transform .16s ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.hiding {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+
+    .toast.t-success {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .toast.t-error {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .toast.t-info {
+      border-color: var(--info);
+      color: var(--info);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="toolbar">
+    <span id="label">Companion</span>
+    <div style="flex:1; -webkit-app-region:drag; height:100%;"></div>
+
+    <div id="toolbar-right">
+      <button class="tb-btn" id="btn-main-win" title="Open in main window" tabindex="-1">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+          <polyline points="15 3 21 3 21 9" />
+          <line x1="10" y1="14" x2="21" y2="3" />
+        </svg>
+      </button>
+      <button class="tb-btn" id="btn-refresh" title="Reload" tabindex="-1">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10" />
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+        </svg>
+      </button>
+      <button class="tb-btn" id="btn-accounts" title="Switch accounts (Alt+A)" tabindex="-1">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 20v-1a8 8 0 0 1 16 0v1" />
+        </svg>
+      </button>
+
+      <div id="win-btns">
+        <button class="wc" id="btn-min" title="Minimize" tabindex="-1">
+          <svg width="10" height="2" viewBox="0 0 10 2">
+            <rect width="10" height="2" rx="1" fill="currentColor" />
+          </svg>
+        </button>
+        <button class="wc" id="btn-max" title="Maximize" tabindex="-1">
+          <svg width="10" height="10" viewBox="0 0 10 10">
+            <rect x=".75" y=".75" width="8.5" height="8.5" rx="1.2" stroke="currentColor" stroke-width="1.5"
+              fill="none" />
+          </svg>
+        </button>
+        <button class="wc cls" id="btn-cls" title="Hide" tabindex="-1">
+          <svg width="10" height="10" viewBox="0 0 10 10">
+            <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="accounts-panel">
+    <div class="ap-inner" id="accounts-list-comp"></div>
+  </div>
+
+  <div id="toast-area"></div>
+
+  <script>
+    let accounts = {};
+    let panelOpen = false;
+    let keybindings = {};
+
+    window.api.onPlatform(p => { if (p === 'darwin') document.body.classList.add('mac'); });
+    window.api.onAccountsUpdate(data => { accounts = data || {}; renderAccounts(); });
+    window.api.onKeybindingsUpdate(d => { keybindings = d.keybindings || {}; });
+    window.api.onToggleAccountsPanel(() => panelOpen ? closePanel() : openPanel());
+
+    function renderAccounts() {
+      const list = document.getElementById('accounts-list-comp');
+      const names = Object.keys(accounts);
+      if (!names.length) {
+        list.innerHTML = '<div class="ap-empty">No saved accounts.<br>Use the main window to save accounts.</div>';
+      } else {
+        list.innerHTML = names.map(name => {
+          const e = escHtml(name);
+          return `<div class="account-row">
+            <span class="account-name" title="${e}">${e}</span>
+            <div class="account-btns">
+              <button class="ab-icon ab-load" data-name="${e}" data-action="context" title="Load with context" tabindex="-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                  <polyline points="10 17 15 12 10 7"/>
+                  <line x1="15" y1="12" x2="3" y2="12"/>
+                </svg>
+              </button>
+            </div>
+          </div>`;
+        }).join('');
+      }
+      if (panelOpen) reportPanelHeight();
+    }
+
+    const panel = document.getElementById('accounts-panel');
+
+    function reportPanelHeight() {
+      const MAX_PANEL = 260;
+      const h = panelOpen ? Math.min(panel.scrollHeight, MAX_PANEL) : 0;
+      window.api.companionPanelResize(h);
+    }
+
+    function openPanel() {
+      panelOpen = true;
+      panel.classList.add('open');
+      document.getElementById('btn-accounts').classList.add('active');
+      requestAnimationFrame(() => requestAnimationFrame(reportPanelHeight));
+    }
+
+    function closePanel() {
+      panelOpen = false;
+      panel.classList.remove('open');
+      document.getElementById('btn-accounts').classList.remove('active');
+      window.api.companionPanelResize(0);
+    }
+
+    function matchesShortcut(e, sc) {
+      if (!sc || sc.global || sc.special) return false;
+      return e.key.toLowerCase() === sc.key?.toLowerCase()
+        && !!sc.ctrl === (e.ctrlKey || e.metaKey)
+        && !!sc.alt === e.altKey
+        && !!sc.shift === e.shiftKey;
+    }
+
+    document.getElementById('btn-accounts').addEventListener('click', () => {
+      if (panelOpen) { closePanel(); window.api.focusCompanionView(); }
+      else openPanel();
+    });
+
+    document.getElementById('accounts-list-comp').addEventListener('click', async e => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const name = btn.dataset.name;
+      toast('Loading…', 'info');
+      const res = await window.api.companionSwitchWithContext(name);
+      toast(
+        res?.ok ? `Loaded "${name}"` + (res.shareUrl ? ' 🔗' : '') : `Failed: ${res?.error}`,
+        res?.ok ? 'success' : 'error'
+      );
+      closePanel();
+      window.api.focusCompanionView();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && panelOpen) { closePanel(); return; }
+      if (e.key === 'F5') { e.preventDefault(); window.api.reloadCompanion(); return; }
+      const acctShortcut = keybindings.toggleAccounts || { ctrl: false, alt: true, shift: false, key: 'a' };
+      if (matchesShortcut(e, acctShortcut)) {
+        e.preventDefault();
+        panelOpen ? closePanel() : openPanel();
+        return;
+      }
+      const reloadShortcut = keybindings.reloadTab || { ctrl: true, alt: false, shift: false, key: 'r' };
+      if (matchesShortcut(e, reloadShortcut)) {
+        e.preventDefault();
+        window.api.reloadCompanion();
+      }
+    });
+
+    document.getElementById('btn-min').addEventListener('click', () => window.api.windowControl('minimize'));
+    document.getElementById('btn-max').addEventListener('click', () => { window.api.windowControl('maximize'); window.api.focusCompanionView(); });
+    document.getElementById('btn-cls').addEventListener('click', () => window.api.windowControl('close'));
+    document.getElementById('btn-refresh').addEventListener('click', () => { window.api.reloadCompanion(); window.api.focusCompanionView(); });
+    document.getElementById('btn-main-win').addEventListener('click', async () => {
+      window.api.windowControl('close');
+      await window.api.openInMain();
+    });
+
+    function showToast(msg, type) {
+      const area = document.getElementById('toast-area');
+      const el = document.createElement('div');
+      el.className = 'toast' + (type ? ' t-' + type : '');
+      el.textContent = msg;
+      area.appendChild(el);
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+      setTimeout(() => {
+        el.classList.remove('show');
+        el.classList.add('hiding');
+        setTimeout(() => el.remove(), 180);
+      }, 2800);
+    }
+    window.api.onCompanionToast((msg, type) => showToast(msg, type));
+    function toast(msg, type = '') { window.api.showCompanionToast(msg, type); }
+    function escHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+
+</html>

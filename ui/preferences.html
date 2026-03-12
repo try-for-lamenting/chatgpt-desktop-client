@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Preferences</title>
+  <style>
+    :root {
+      --bg: #111111;
+      --toolbar: #191919;
+      --border: #2a2a2a;
+      --text: #e4e4e7;
+      --muted: #71717a;
+      --muted2: #52525b;
+      --accent: #6366f1;
+      --accent-h: #4f51d8;
+      --surface: #1a1a1a;
+      --surface2: #222222;
+      --surface3: #2a2a2a;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --info: #0ea5e9;
+      --radius: 7px;
+      --toolbar-h: 44px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      font-size: 13px;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+    }
+
+    button {
+      cursor: pointer;
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    input,
+    textarea,
+    select {
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    code {
+      font-family: 'SF Mono', 'Consolas', monospace;
+      font-size: 11px;
+      background: var(--surface3);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    /* Toolbar */
+    #toolbar {
+      height: var(--toolbar-h);
+      background: var(--toolbar);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px 0 14px;
+      -webkit-app-region: drag;
+      flex-shrink: 0;
+    }
+
+    body.mac #toolbar {
+      padding-left: 80px;
+    }
+
+    body.mac #win-controls {
+      display: none;
+    }
+
+    #toolbar-title {
+      flex: 1;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+      -webkit-app-region: drag;
+    }
+
+    #win-controls {
+      display: flex;
+      gap: 1px;
+      -webkit-app-region: no-drag;
+    }
+
+    .wc-btn {
+      width: 30px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .12s, color .12s;
+    }
+
+    .wc-btn:hover {
+      background: var(--surface3);
+      color: var(--text);
+    }
+
+    .wc-close:hover {
+      background: var(--danger) !important;
+      color: #fff !important;
+    }
+
+    /* Tab pills */
+    #tab-bar {
+      display: flex;
+      gap: 2px;
+      padding: 8px 12px 0;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab-pill {
+      padding: 6px 18px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 6px 6px 0 0;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .12s, color .12s;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .tab-pill:hover {
+      color: var(--text);
+      background: var(--surface2);
+    }
+
+    .tab-pill.active {
+      color: var(--accent);
+      background: var(--surface);
+      border-bottom: 2px solid var(--accent);
+    }
+
+    /* Content */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 14px 80px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--surface3) transparent;
+    }
+
+    #content::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    #content::-webkit-scrollbar-thumb {
+      background: var(--surface3);
+      border-radius: 3px;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 18px 0 8px;
+    }
+
+    .section-label:first-child {
+      margin-top: 0;
+    }
+
+    .sc-note {
+      font-size: 11px;
+      color: var(--muted2);
+      padding: 3px 2px 4px;
+      line-height: 1.55;
+    }
+
+    /* Shortcut row */
+    .sc-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 4px;
+      transition: border-color .12s;
+    }
+
+    .sc-row:hover {
+      border-color: var(--surface3);
+    }
+
+    .sc-row.frozen {
+      opacity: .5;
+      pointer-events: none;
+    }
+
+    .sc-desc {
+      flex: 1;
+    }
+
+    .sc-name {
+      font-size: 12.5px;
+      color: var(--text);
+    }
+
+    .sc-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    /* Right side controls */
+    .sc-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .sc-display {
+      min-width: 110px;
+      text-align: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--text);
+      font-weight: 500;
+      transition: border-color .15s, background .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .sc-display.recording {
+      background: rgba(99, 102, 241, .12);
+      border-color: var(--accent);
+      color: var(--accent);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .6
+      }
+    }
+
+    /* Win key icon inside display */
+    .win-key-svg {
+      display: inline-block;
+      vertical-align: -1px;
+      flex-shrink: 0;
+    }
+
+    /* Record button – default = old hover look; hover = glow; active = full glow */
+    .btn-record {
+      padding: 4px 10px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--surface3);
+      color: var(--text);
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: box-shadow .15s, border-color .15s, background .12s;
+      white-space: nowrap;
+    }
+
+    .btn-record:hover {
+      border-color: rgba(99, 102, 241, .5);
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, .2), 0 0 12px rgba(99, 102, 241, .2);
+    }
+
+    .btn-record:active {
+      border-color: rgba(99, 102, 241, .85);
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, .6), 0 0 22px rgba(99, 102, 241, .5), 0 0 6px rgba(99, 102, 241, .4);
+    }
+
+    .btn-record.recording {
+      background: rgba(99, 102, 241, .18);
+      color: var(--accent);
+      border-color: rgba(99, 102, 241, .45);
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, .3), 0 0 12px rgba(99, 102, 241, .2);
+    }
+
+    /* Restore default button */
+    .btn-restore {
+      padding: 4px 7px;
+      border-radius: 5px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted2);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .12s;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .btn-restore:hover {
+      background: var(--surface3);
+      color: var(--muted);
+      border-color: var(--border);
+    }
+
+    .btn-restore:active {
+      color: var(--text);
+    }
+
+    /* Startup opts */
+    .opt-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 4px;
+    }
+
+    .opt-row label {
+      flex: 1;
+      font-size: 12.5px;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+
+    .opt-row .opt-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .opt-check {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .opt-color {
+      width: 36px;
+      height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 2px;
+      background: var(--surface2);
+    }
+
+    /* Footer */
+    #footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 10px 14px;
+      background: var(--toolbar);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 7px 18px;
+      border-radius: var(--radius);
+      border: none;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .12s;
+    }
+
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--muted);
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface3);
+      color: var(--text);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-h);
+    }
+
+    .btn-danger-ghost {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, .3);
+    }
+
+    .btn-danger-ghost:hover {
+      background: rgba(239, 68, 68, .1);
+    }
+
+    #save-status {
+      font-size: 11.5px;
+      flex: 1;
+    }
+
+    #save-status.ok {
+      color: var(--success);
+    }
+
+    #save-status.err {
+      color: var(--danger);
+    }
+
+    /* Per-tab restore defaults button */
+    .tab-restore-row {
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-restore-tab {
+      padding: 5px 13px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .12s, color .12s, border-color .12s;
+    }
+
+    .btn-restore-tab:hover {
+      background: var(--surface2);
+      color: var(--text);
+      border-color: var(--surface3);
+    }
+  </style>
+</head>
+
+<body>
+  <div id="toolbar">
+    <span id="toolbar-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+        style="vertical-align:middle;margin-right:6px;margin-bottom:1px">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+      </svg>Preferences</span>
+    <div id="win-controls">
+      <button class="wc-btn" id="btn-min" title="Minimize">
+        <svg width="10" height="1" viewBox="0 0 10 1">
+          <rect width="10" height="1.5" rx="1" fill="currentColor" />
+        </svg>
+      </button>
+      <button class="wc-btn wc-close" id="btn-close" title="Close">
+        <svg width="10" height="10" viewBox="0 0 10 10">
+          <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          <line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <main>
+    <div id="tab-bar">
+      <button class="tab-pill active" data-tab="keybindings">Shortcuts</button>
+      <button class="tab-pill" data-tab="startup">Startup</button>
+    </div>
+
+    <div id="content">
+
+      <!-- SHORTCUTS -->
+      <div class="tab-panel active" id="tab-keybindings">
+
+        <div class="sc-note" style="margin-bottom:12px;">
+          Click <strong>Record</strong> on any shortcut, press your desired key combination, then click
+          <strong>Stop</strong> (or press Escape to cancel). Click <strong>Save changes</strong> when done.
+        </div>
+
+        <div class="section-label">In-App Shortcuts</div>
+
+        <div class="sc-row" data-key="toggleAccounts">
+          <div class="sc-desc">
+            <div class="sc-name">Toggle account panel</div>
+            <div class="sc-sub">Opens/closes account switcher in main &amp; companion</div>
+          </div>
+          <div class="sc-right">
+            <div class="sc-display" data-key="toggleAccounts"></div>
+            <button class="btn-restore" data-key="toggleAccounts" title="Restore default">↺</button>
+            <button class="btn-record" data-key="toggleAccounts">Record</button>
+          </div>
+        </div>
+
+        <div class="sc-row" data-key="newTab">
+          <div class="sc-desc">
+            <div class="sc-name">New tab</div>
+            <div class="sc-sub">Open a new isolated ChatGPT session</div>
+          </div>
+          <div class="sc-right">
+            <div class="sc-display" data-key="newTab"></div>
+            <button class="btn-restore" data-key="newTab" title="Restore default">↺</button>
+            <button class="btn-record" data-key="newTab">Record</button>
+          </div>
+        </div>
+
+        <div class="sc-row" data-key="closeTab">
+          <div class="sc-desc">
+            <div class="sc-name">Close tab</div>
+            <div class="sc-sub">Close the currently active tab</div>
+          </div>
+          <div class="sc-right">
+            <div class="sc-display" data-key="closeTab"></div>
+            <button class="btn-restore" data-key="closeTab" title="Restore default">↺</button>
+            <button class="btn-record" data-key="closeTab">Record</button>
+          </div>
+        </div>
+
+        <div class="sc-row" data-key="nextTab">
+          <div class="sc-desc">
+            <div class="sc-name">Next tab</div>
+            <div class="sc-sub">Cycle forward through open tabs</div>
+          </div>
+          <div class="sc-right">
+            <div class="sc-display" data-key="nextTab"></div>
+            <button class="btn-restore" data-key="nextTab" title="Restore default">↺</button>
+            <button class="btn-record" data-key="nextTab">Record</button>
+          </div>
+        </div>
+
+        <div class="sc-row" data-key="prevTab">
+          <div class="sc-desc">
+            <div class="sc-name">Previous tab</div>
+            <div class="sc-sub">Cycle backward through open tabs</div>
+          </div>
+          <div class="sc-right">
+            <div class="sc-display" data-key="prevTab"></div>
+            <button class="btn-restore" data-key="prevTab" title="Restore default">↺</button>
+            <button class="btn-record" data-key="prevTab">Record</button>
+          </div>
+        </div>
+
+        <div class="sc-row" data-key="reloadTab">
+          <div class="sc-desc">
+            <div class="sc-name">Reload tab</div>
+            <div class="sc-sub">Reload the active tab (main &amp; companion)</div>
+          </div>
+          <div class="sc-right">
+            <div class="sc-display" data-key="reloadTab"></div>
+            <button class="btn-restore" data-key="reloadTab" title="Restore default">↺</button>
+            <button class="btn-record" data-key="reloadTab">Record</button>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:20px;">Global Shortcut</div>
+
+        <div class="sc-row" data-key="toggleCompanion">
+          <div class="sc-desc">
+            <div class="sc-name">Toggle companion window</div>
+            <div class="sc-sub">Toggle visibility of the companion window. Works as long as the app is in background.
+            </div>
+          </div>
+          <div class="sc-right">
+            <div class="sc-display" data-key="toggleCompanion"></div>
+            <button class="btn-restore" data-key="toggleCompanion" title="Restore default">↺</button>
+            <button class="btn-record" data-key="toggleCompanion">Record</button>
+          </div>
+        </div>
+        <div class="sc-note">Modifiers supported: <code>⊞ Win</code> <code>Ctrl</code> <code>Alt</code>
+          <code>Shift</code>.
+        </div>
+
+        <div class="tab-restore-row">
+          <button class="btn-restore-tab" id="btn-reset-keybindings">↺ Restore shortcut defaults</button>
+        </div>
+
+      </div><!-- /tab-keybindings -->
+
+      <!-- STARTUP -->
+      <div class="tab-panel" id="tab-startup">
+
+        <div class="section-label">Window Behavior</div>
+
+        <div class="opt-row">
+          <label for="opt-open-on-startup">Open on startup<div class="opt-sub">Automatically launch when you log into
+              your OS</div></label>
+          <input type="checkbox" class="opt-check" id="opt-open-on-startup">
+        </div>
+        <div class="opt-row">
+          <label for="opt-minimized">Start minimized<div class="opt-sub">Launch minimized to taskbar instead of visible
+            </div></label>
+          <input type="checkbox" class="opt-check" id="opt-minimized">
+        </div>
+
+        <div class="section-label" style="margin-top:20px;">Companion</div>
+
+        <div class="opt-row">
+          <label for="opt-ontop">Always on top<div class="opt-sub">Keep the companion window floating above all other
+              apps</div></label>
+          <input type="checkbox" class="opt-check" id="opt-ontop">
+        </div>
+
+        <div class="section-label" style="margin-top:20px;">Developer</div>
+        <div class="opt-row">
+          <label for="opt-devtools">Enable DevTools<div class="opt-sub">Allow F12 and Ctrl+Shift+I to open Chromium
+              DevTools</div></label>
+          <input type="checkbox" class="opt-check" id="opt-devtools">
+        </div>
+
+        <div class="tab-restore-row">
+          <button class="btn-restore-tab" id="btn-reset-startup">↺ Restore startup defaults</button>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <div id="footer">
+    <span id="save-status"></span>
+    <button class="btn btn-ghost" id="btn-cancel">Cancel</button>
+    <button class="btn btn-primary" id="btn-save">Save changes</button>
+  </div>
+
+  <script>
+    // state
+    let currentKeybindings = {};
+    let currentStartup = {};
+    let recordingKey = null;
+
+    // default settings for "reset to default"
+    const DEFAULT_SETTINGS = {
+      openOnStartup: true,
+      startMinimized: true,
+      companionOnTop: true,
+      devToolsEnabled: true,
+    };
+
+    // Windows logo svg
+    const WIN_SVG = `<svg class="win-key-svg" width="11" height="11" viewBox="0 0 11 11" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:-1px;flex-shrink:0"><rect x="0" y="0" width="5" height="5" rx="0.6"/><rect x="6" y="0" width="5" height="5" rx="0.6"/><rect x="0" y="6" width="5" height="5" rx="0.6"/><rect x="6" y="6" width="5" height="5" rx="0.6"/></svg>`;
+
+    const DEFAULT_KEYBINDINGS = {
+      toggleAccounts: { ctrl: false, alt: true, shift: false, meta: false, key: 'a' },
+      newTab: { ctrl: true, alt: false, shift: false, meta: false, key: 't' },
+      closeTab: { ctrl: true, alt: false, shift: false, meta: false, key: 'w' },
+      nextTab: { ctrl: true, alt: false, shift: false, meta: false, key: 'Tab' },
+      prevTab: { ctrl: true, alt: false, shift: true, meta: false, key: 'Tab' },
+      reloadTab: { ctrl: true, alt: false, shift: false, meta: false, key: 'r' },
+      toggleCompanion: { global: 'Super+Alt+/', label: '\u229e+Alt+/', meta: true, ctrl: false, alt: true, shift: false, key: '/' },
+    };
+
+    // build plain text shortcut from a config
+    function labelFromCfg(cfg) {
+      if (!cfg) return '\u2014';
+      if (cfg.global) return cfg.label || cfg.global;
+      if (cfg.special) return cfg.special;
+      const parts = [];
+      if (cfg.meta) parts.push('\u229e'); // ⊞ Win key
+      if (cfg.ctrl) parts.push('Ctrl');
+      if (cfg.alt) parts.push('Alt');
+      if (cfg.shift) parts.push('Shift');
+      if (cfg.key) parts.push(cfg.key.length === 1 ? cfg.key.toUpperCase() : cfg.key);
+      return parts.join('+') || '\u2014';
+    }
+
+    function renderDisplay(el, cfg) {
+      if (!el) return;
+      const label = labelFromCfg(cfg);
+      const SEP = '<span style="color:var(--muted2);margin:0 1px;font-weight:400">+</span>';
+      const parts = label.split('+');
+      el.innerHTML = parts.map((p, i) => {
+        const hasSep = i < parts.length - 1;
+        const sep = hasSep ? SEP : '';
+        if (p === '\u229e') return WIN_SVG + sep;
+        return `<span>${escHtml(p)}</span>${sep}`;
+      }).join('');
+    }
+
+    // build electron globalShortcut string from a keydown event
+    function buildGlobalStr(e) {
+      const parts = [];
+      if (e.metaKey) parts.push('Super');
+      if (e.ctrlKey) parts.push('Ctrl');
+      if (e.altKey) parts.push('Alt');
+      if (e.shiftKey) parts.push('Shift');
+      let k = e.key;
+      if (k === ' ') k = 'Space';
+      parts.push(k);
+      return parts.join('+');
+    }
+    function buildDisplayLabel(e) {
+      const parts = [];
+      if (e.metaKey) parts.push('\u229e');
+      if (e.ctrlKey) parts.push('Ctrl');
+      if (e.altKey) parts.push('Alt');
+      if (e.shiftKey) parts.push('Shift');
+      let k = e.key;
+      if (k === ' ') k = 'Space';
+      parts.push(k.length === 1 ? k.toUpperCase() : k);
+      return parts.join('+');
+    }
+
+    // tab switching
+    document.querySelectorAll('.tab-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        stopRecording(false);
+        const t = pill.dataset.tab;
+        document.querySelectorAll('.tab-pill').forEach(p => p.classList.toggle('active', p.dataset.tab === t));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + t));
+      });
+    });
+    document.getElementById('btn-min').addEventListener('click', () => window.api.windowControl('minimize'));
+    document.getElementById('btn-close').addEventListener('click', () => { stopRecording(false); window.api.windowControl('close'); });
+    window.api.onPlatform(p => { if (p === 'darwin') document.body.classList.add('mac'); });
+
+    // live updates from main process
+    window.api.onKeybindingsUpdate(d => {
+      currentKeybindings = deepClone(d.keybindings || {});
+      refreshDisplays();
+    });
+    window.api.onSettingsUpdate(d => { currentStartup = { ...d }; populateStartup(); });
+
+    // initialization
+    (async () => {
+      const sc = await window.api.getKeybindings();
+      currentKeybindings = deepClone(sc.keybindings || {});
+      currentStartup = await window.api.getAppSettings();
+      refreshDisplays();
+      populateStartup();
+    })();
+    function refreshDisplays() {
+      document.querySelectorAll('.sc-display[data-key]').forEach(el => {
+        const k = el.dataset.key;
+        const cfg = currentKeybindings[k] || DEFAULT_KEYBINDINGS[k];
+        renderDisplay(el, cfg);
+      });
+    }
+    function startRecording(scKey) {
+      if (recordingKey) stopRecording(false);
+      recordingKey = scKey;
+      window.api.suspendGlobalKeybindings();
+      const display = document.querySelector(`.sc-display[data-key="${scKey}"]`);
+      const btn = document.querySelector(`.btn-record[data-key="${scKey}"]`);
+      if (display) { display.textContent = 'Press keys\u2026'; display.classList.add('recording'); }
+      if (btn) { btn.textContent = 'Stop'; btn.classList.add('recording'); }
+    }
+
+    function stopRecording(apply) {
+      if (!recordingKey) return;
+      const scKey = recordingKey;
+      recordingKey = null;
+      window.api.resumeGlobalKeybindings();
+      const display = document.querySelector(`.sc-display[data-key="${scKey}"]`);
+      const btn = document.querySelector(`.btn-record[data-key="${scKey}"]`);
+      if (display) display.classList.remove('recording');
+      if (btn) { btn.textContent = 'Record'; btn.classList.remove('recording'); }
+      if (!apply) {
+        renderDisplay(display, currentKeybindings[scKey] || DEFAULT_KEYBINDINGS[scKey]);
+      }
+    }
+    document.querySelectorAll('.btn-record[data-key]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const k = btn.dataset.key;
+        if (recordingKey === k) stopRecording(false);
+        else startRecording(k);
+      });
+    });
+    document.querySelectorAll('.btn-restore[data-key]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const k = btn.dataset.key;
+        if (recordingKey === k) stopRecording(false);
+        const def = DEFAULT_KEYBINDINGS[k];
+        if (def) {
+          currentKeybindings[k] = deepClone(def);
+          const display = document.querySelector(`.sc-display[data-key="${k}"]`);
+          renderDisplay(display, def);
+        }
+      });
+    });
+
+    document.addEventListener('keydown', e => {
+      if (!recordingKey) return;
+      if (e.key === 'Escape') { stopRecording(false); return; }
+      if (['Control', 'Alt', 'Shift', 'Meta', 'Super'].includes(e.key)) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      let cfg;
+      if (recordingKey === 'toggleCompanion') {
+        // build electron global format + display label
+        cfg = {
+          global: buildGlobalStr(e),
+          label: buildDisplayLabel(e),
+          meta: e.metaKey,
+          ctrl: e.ctrlKey,
+          alt: e.altKey,
+          shift: e.shiftKey,
+          key: e.key,
+        };
+      } else {
+        cfg = {
+          ctrl: e.ctrlKey,
+          alt: e.altKey,
+          shift: e.shiftKey,
+          meta: e.metaKey,
+          key: e.key,
+        };
+        cfg.label = labelFromCfg(cfg);
+      }
+
+      currentKeybindings[recordingKey] = cfg;
+      const display = document.querySelector(`.sc-display[data-key="${recordingKey}"]`);
+      renderDisplay(display, cfg);
+      stopRecording(true);
+    }, true);
+
+    // startup options
+    function populateStartup() {
+      const s = currentStartup;
+      document.getElementById('opt-open-on-startup').checked = s.openOnStartup !== false;
+      document.getElementById('opt-minimized').checked = !!s.startMinimized;
+      document.getElementById('opt-ontop').checked = s.companionOnTop !== false;
+      document.getElementById('opt-devtools').checked = s.devToolsEnabled !== false;
+    }
+
+    function readStartup() {
+      return {
+        openOnStartup: document.getElementById('opt-open-on-startup').checked,
+        startMinimized: document.getElementById('opt-minimized').checked,
+        companionOnTop: document.getElementById('opt-ontop').checked,
+        devToolsEnabled: document.getElementById('opt-devtools').checked,
+      };
+    }
+
+    async function saveAll() {
+      stopRecording(false);
+      const statusEl = document.getElementById('save-status');
+      try {
+        await window.api.saveKeybindings({ keybindings: currentKeybindings });
+        await window.api.saveAppSettings(readStartup());
+        statusEl.textContent = '\u2713 Saved'; statusEl.className = 'ok';
+        setTimeout(() => { statusEl.textContent = ''; statusEl.className = ''; }, 2500);
+      } catch (err) {
+        statusEl.textContent = '\u2717 ' + err.message; statusEl.className = 'err';
+      }
+    }
+
+    document.getElementById('btn-save').addEventListener('click', saveAll);
+    document.getElementById('btn-cancel').addEventListener('click', () => { stopRecording(false); window.api.windowControl('close'); });
+
+    document.getElementById('btn-reset-keybindings').addEventListener('click', () => {
+      if (!confirm('Restore all shortcuts to their defaults?')) return;
+      stopRecording(false);
+      currentKeybindings = deepClone(DEFAULT_KEYBINDINGS);
+      refreshDisplays();
+    });
+
+    document.getElementById('btn-reset-startup').addEventListener('click', () => {
+      if (!confirm('Restore all startup options to their defaults?')) return;
+      currentStartup = { ...DEFAULT_SETTINGS };
+      populateStartup();
+    });
+
+    function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+    function escHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+
+</html>
