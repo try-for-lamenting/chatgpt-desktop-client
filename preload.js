@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('api', {
 
   focusMain: () => ipcRenderer.invoke('focus-main'),
   openInMain: () => ipcRenderer.invoke('open-in-main'),
+  openInCompanion: () => ipcRenderer.invoke('open-in-companion'),
   reloadCompanion: () => ipcRenderer.invoke('reload-companion'),
   focusCompanionView: () => ipcRenderer.invoke('focus-companion-view'),
   companionPanelResize: (h) => ipcRenderer.invoke('companion-panel-resize', h),

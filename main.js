@@ -928,13 +928,39 @@ ipcMain.handle('companion-switch-with-context', async (_, name) => {
   let shareUrl = null;
   const compUrl = companionView?.webContents.getURL();
   if (isShareUrl(compUrl)) shareUrl = compUrl;
-  else try { shareUrl = await getShareLink(); } catch (_) { }
+  else if (mainWin && !mainWin.isDestroyed() && tabs.length > 0) {
+    try { shareUrl = await getShareLink(); } catch (_) { }
+  }
   await clearCookies(COMPANION_PARTITION);
   await restoreCookies(data.cookies, COMPANION_PARTITION);
   await companionSession().cookies.flushStore();
   companionView?.webContents.loadURL(shareUrl || CHATGPT_URL);
   lastUsedAccount = name;
   return { ok: true, shareUrl };
+});
+
+ipcMain.handle('open-in-companion', async () => {
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  if (!activeTab) return false;
+  const url = activeTab.view.webContents.getURL() || CHATGPT_URL;
+  const cookies = await getSession(activeTab.partition).cookies.get({});
+
+  await clearCookies(COMPANION_PARTITION);
+  await restoreCookies(cookies, COMPANION_PARTITION);
+  await companionSession().cookies.flushStore();
+
+  if (companionView && !companionView.webContents.isDestroyed()) {
+    companionView.webContents.loadURL(url);
+  }
+
+  if (companionWin && !companionWin.isDestroyed()) {
+    companionWin.show();
+    companionWin.focus();
+    companionVisible = true;
+    focusCompanionView();
+  }
+
+  return true;
 });
 
 ipcMain.handle('open-in-main', async () => {

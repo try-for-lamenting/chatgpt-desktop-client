@@ -141,6 +141,10 @@ function wire() {
 
   byId('refresh-btn')?.addEventListener('click', () => window.api.reloadTab());
 
+  byId('open-in-companion-btn')?.addEventListener('click', async () => {
+    await window.api.openInCompanion();
+  });
+
   byId('save-btn')?.addEventListener('click', doSaveAccount);
   byId('account-name-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') doSaveAccount(); });
 
