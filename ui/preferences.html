@@ -664,7 +664,7 @@
         </div>
 
         <div class="tab-restore-row">
-          <button class="btn-restore-tab" id="btn-reset-startup">↺ Restore startup defaults</button>
+          <button class="btn-restore-tab" id="btn-reset-options">↺ Restore defaults</button>
         </div>
 
       </div>
@@ -681,7 +681,7 @@
   <script>
     // state
     let currentKeybindings = {};
-    let currentStartup = {};
+    let currentOptions = {};
     let recordingKey = null;
 
     // default settings for "reset to default"
@@ -774,15 +774,15 @@
       currentKeybindings = deepClone(d.keybindings || {});
       refreshDisplays();
     });
-    window.api.onSettingsUpdate(d => { currentStartup = { ...d }; populateStartup(); });
+    window.api.onSettingsUpdate(d => { currentOptions = { ...d }; populateOptions(); });
 
     // initialization
     (async () => {
       const sc = await window.api.getKeybindings();
       currentKeybindings = deepClone(sc.keybindings || {});
-      currentStartup = await window.api.getAppSettings();
+      currentOptions = await window.api.getAppSettings();
       refreshDisplays();
-      populateStartup();
+      populateOptions();
     })();
     function refreshDisplays() {
       document.querySelectorAll('.sc-display[data-key]').forEach(el => {
@@ -872,8 +872,8 @@
     }, true);
 
     // startup options
-    function populateStartup() {
-      const s = currentStartup;
+    function populateOptions() {
+      const s = currentOptions;
       document.getElementById('opt-open-on-startup').checked = s.openOnStartup !== false;
       document.getElementById('opt-minimized').checked = !!s.startMinimized;
       document.getElementById('opt-ontop').checked = s.companionOnTop !== false;
@@ -912,10 +912,10 @@
       refreshDisplays();
     });
 
-    document.getElementById('btn-reset-startup').addEventListener('click', () => {
-      if (!confirm('Restore all startup options to their defaults?')) return;
-      currentStartup = { ...DEFAULT_SETTINGS };
-      populateStartup();
+    document.getElementById('btn-reset-options').addEventListener('click', () => {
+      if (!confirm('Restore options to their defaults?')) return;
+      currentOptions = { ...DEFAULT_SETTINGS };
+      populateOptions();
     });
 
     function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
