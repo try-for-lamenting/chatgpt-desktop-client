@@ -28,9 +28,7 @@ A custom Electron-based desktop client for ChatGPT with multi-account management
 - **Open in Main** moves the current companion session into a full main-window tab
 
 ### Preferences
-- All keyboard shortcuts are fully customizable and recorded live (global shortcuts are suspended while recording so they don't fire mid-capture)
-- Startup behavior is configurable: maximize, minimize, open companion on launch, companion always-on-top
-- The help sidebar in the main window reflects your current shortcut assignments dynamically
+
 
 ---
 

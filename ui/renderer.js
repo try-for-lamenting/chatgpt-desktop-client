@@ -150,7 +150,7 @@ function wire() {
 
   byId('clear-btn')?.addEventListener('click', async () => {
     await window.api.clearCookies();
-    toast('Signed out — cookies cleared.', 'success');
+    toast('Signed out, cookies cleared.', 'success');
   });
 
   byId('share-btn')?.addEventListener('click', async () => {

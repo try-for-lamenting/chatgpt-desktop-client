@@ -206,12 +206,10 @@ body.mac #toolbar {
   color: var(--accent);
 }
 
-/* ── Help toggle ── */
 #help-toggle {
   position: relative;
 }
 
-/* ── Window controls — right side ── */
 #win-controls {
   display: flex;
   align-items: center;

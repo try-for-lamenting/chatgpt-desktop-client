@@ -356,7 +356,6 @@
       color: var(--text);
     }
 
-    /* Startup opts */
     .opt-row {
       display: flex;
       align-items: center;
@@ -521,7 +520,7 @@
   <main>
     <div id="tab-bar">
       <button class="tab-pill active" data-tab="keybindings">Shortcuts</button>
-      <button class="tab-pill" data-tab="startup">Startup</button>
+      <button class="tab-pill" data-tab="options">Options</button>
     </div>
 
     <div id="content">
@@ -630,10 +629,9 @@
           <button class="btn-restore-tab" id="btn-reset-keybindings">↺ Restore shortcut defaults</button>
         </div>
 
-      </div><!-- /tab-keybindings -->
-
-      <!-- STARTUP -->
-      <div class="tab-panel" id="tab-startup">
+      </div>
+      
+      <div class="tab-panel" id="tab-options">
 
         <div class="section-label">Window Behavior</div>
 
@@ -880,7 +878,7 @@
       document.getElementById('opt-devtools').checked = s.devToolsEnabled !== false;
     }
 
-    function readStartup() {
+    function readOptions() {
       return {
         openOnStartup: document.getElementById('opt-open-on-startup').checked,
         startMinimized: document.getElementById('opt-minimized').checked,
@@ -894,7 +892,7 @@
       const statusEl = document.getElementById('save-status');
       try {
         await window.api.saveKeybindings({ keybindings: currentKeybindings });
-        await window.api.saveAppSettings(readStartup());
+        await window.api.saveAppSettings(readOptions());
         statusEl.textContent = '\u2713 Saved'; statusEl.className = 'ok';
         setTimeout(() => { statusEl.textContent = ''; statusEl.className = ''; }, 2500);
       } catch (err) {
