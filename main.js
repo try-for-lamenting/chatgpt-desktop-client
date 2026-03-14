@@ -13,13 +13,15 @@ function isLoginItemEnabled() {
 }
 function setLoginItem(enable) {
   try {
-    app.setLoginItemSettings({
-      openAtLogin: enable,
-      // windows uses args here to distinguish startup launches
-      // wasOpenedAtLogin works on mac only
-      args: enable ? [LOGIN_ARG] : [],
-      path: app.getPath("exe")
-    });
+    if (app.isPackaged) {
+      app.setLoginItemSettings({
+        openAtLogin: enable,
+        // windows uses args here to distinguish startup launches
+        // wasOpenedAtLogin works on mac only
+        args: enable ? [LOGIN_ARG] : [],
+        path: app.getPath("exe")
+      });
+    }
   } catch (_) { }
 }
 function wasLaunchedAtLogin() {
