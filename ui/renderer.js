@@ -388,18 +388,7 @@ function setHelpSidebarOpen(open) {
 }
 
 function toast(msg, type = '') {
-  const area = document.getElementById('toast-area');
-  if (!area) { window.api.showToast(msg, type); return; }
-  const el = document.createElement('div');
-  el.className = 'toast-item' + (type ? ' t-' + type : '');
-  el.textContent = msg;
-  area.appendChild(el);
-  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
-  setTimeout(() => {
-    el.classList.remove('show');
-    el.classList.add('hiding');
-    setTimeout(() => el.remove(), 200);
-  }, 2800);
+  window.api.showToast(msg, type);
 }
 
 async function doImportAccounts() {

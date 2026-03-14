@@ -499,66 +499,6 @@ input[type="text"]::placeholder {
   flex-shrink: 0;
 }
 
-/* ── Toast area — top-center, under toolbar ── */
-#toast-area {
-  position: fixed;
-  top: calc(var(--toolbar-h) + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  z-index: 9999;
-  pointer-events: none;
-  width: max-content;
-  max-width: calc(100vw - 60px);
-}
-
-.toast-item {
-  background: var(--surface2);
-  color: var(--text);
-  border: 1px solid var(--border);
-  padding: 8px 18px;
-  border-radius: 9px;
-  font-size: 12.5px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, .5);
-  white-space: nowrap;
-  max-width: calc(100vw - 60px);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: 0;
-  transform: translateY(-8px);
-  transition: opacity .18s, transform .18s;
-  pointer-events: none;
-}
-
-.toast-item.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.toast-item.hiding {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-.toast-item.t-success {
-  border-color: var(--success);
-  color: var(--success);
-}
-
-.toast-item.t-error {
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
-.toast-item.t-info {
-  border-color: var(--info);
-  color: var(--info);
-}
-
-/* ── Help panel ── */
 .help-body {
   flex: 1;
   overflow-y: auto;

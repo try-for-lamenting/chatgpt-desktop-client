@@ -7,7 +7,9 @@ const fs = require('fs');
 
 const LOGIN_ARG = '--login-launch';
 function isLoginItemEnabled() {
-  try { return app.getLoginItemSettings({ args: [LOGIN_ARG] }).openAtLogin; } catch (_) { return false; }
+  try {
+    return app.getLoginItemSettings({ args: [LOGIN_ARG] }).openAtLogin;
+  } catch (_) { return false; }
 }
 function setLoginItem(enable) {
   try {
@@ -16,6 +18,7 @@ function setLoginItem(enable) {
       // windows uses args here to distinguish startup launches
       // wasOpenedAtLogin works on mac only
       args: enable ? [LOGIN_ARG] : [],
+      path: app.getPath("exe")
     });
   } catch (_) { }
 }
@@ -494,6 +497,78 @@ function setCompanionViewBounds() {
   const top = TOOLBAR_HEIGHT + companionPanelH;
   companionView.setBounds({ x: 0, y: top, width: cw, height: Math.max(1, ch - top) });
 }
+
+function injectToast(wc, msg, type) {
+  if (!wc || wc.isDestroyed()) return;
+  const payload = JSON.stringify({ msg, type });
+  wc.executeJavaScript(`
+    (function(raw) {
+      var p    = JSON.parse(raw);
+      var msg  = p.msg;
+      var type = p.type;
+
+      var area = document.getElementById('__app_toast_area__');
+      if (!area) {
+        area = document.createElement('div');
+        area.id = '__app_toast_area__';
+        area.style.cssText = [
+          'position:fixed',
+          'top:14px',
+          'left:50%',
+          'transform:translateX(-50%)',
+          'display:flex',
+          'flex-direction:column',
+          'align-items:center',
+          'gap:6px',
+          'z-index:2147483647',
+          'pointer-events:none',
+          'font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif',
+        ].join(';');
+        document.body.appendChild(area);
+      }
+
+      var colorMap = { success: '#22c55e', error: '#ef4444', info: '#0ea5e9' };
+      var accent = colorMap[type] || '#e4e4e7';
+      var border = colorMap[type] || '#333333';
+
+      var el = document.createElement('div');
+      el.style.cssText = [
+        'background:#252525',
+        'color:' + accent,
+        'border:1px solid ' + border,
+        'padding:8px 18px',
+        'border-radius:9px',
+        'font-size:12.5px',
+        'font-weight:500',
+        'box-shadow:0 6px 24px rgba(0,0,0,.55)',
+        'white-space:nowrap',
+        'max-width:calc(100vw - 60px)',
+        'overflow:hidden',
+        'text-overflow:ellipsis',
+        'pointer-events:none',
+        'opacity:0',
+        'transform:translateY(-8px)',
+        'transition:opacity .18s ease,transform .18s ease',
+      ].join(';');
+      el.textContent = msg;
+      area.appendChild(el);
+
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          el.style.opacity   = '1';
+          el.style.transform = 'translateY(0)';
+        });
+      });
+
+      setTimeout(function() {
+        el.style.opacity   = '0';
+        el.style.transform = 'translateY(-8px)';
+        setTimeout(function() { el.remove(); }, 200);
+      }, 2800);
+    })(${JSON.stringify(payload)})
+  `).catch(function () { });
+}
+
 function createPreferencesWindow() {
   if (prefsWin && !prefsWin.isDestroyed()) {
     prefsWin.focus();
@@ -549,6 +624,7 @@ function createMainWindow() {
     mainWin.webContents.send('help-sidebar-state', helpSidebarOpen);
     mainWin.webContents.send('platform', process.platform);
     mainWin.webContents.send('keybindings-update', { keybindings, helpOverrides });
+
   });
 
   mainWin.webContents.on('before-input-event', (event, input) => {
@@ -655,7 +731,9 @@ function createCompanionWindow() {
     }
   });
 
-  companionWin.on('resize', setCompanionViewBounds);
+  companionWin.on('resize', () => {
+    setCompanionViewBounds();
+  });
   companionWin.on('focus', focusCompanionView);
   companionWin.on('close', e => { e.preventDefault(); companionWin.hide(); companionVisible = false; });
 }
@@ -681,12 +759,15 @@ function toggleCompanion() {
 }
 
 ipcMain.handle('show-toast', (_, msg, type) => {
-  // now rendered inline in main.html
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  if (activeTab && !activeTab.view.webContents.isDestroyed()) {
+    injectToast(activeTab.view.webContents, msg, type);
+  }
 });
 
 ipcMain.handle('show-companion-toast', (_, msg, type) => {
-  if (companionWin && !companionWin.isDestroyed()) {
-    companionWin.webContents.send('companion-toast', msg, type);
+  if (companionView && !companionView.webContents.isDestroyed()) {
+    injectToast(companionView.webContents, msg, type);
   }
 });
 ipcMain.handle('get-init-data', () => ({

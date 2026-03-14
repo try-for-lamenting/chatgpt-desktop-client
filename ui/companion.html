@@ -245,64 +245,6 @@
       font-size: 12px;
       line-height: 1.7;
     }
-
-    /* Inline toasts */
-    #toast-area {
-      position: fixed;
-      top: calc(var(--toolbar-h) + 10px);
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      pointer-events: none;
-      z-index: 9999;
-    }
-
-    .toast {
-      background: #252525;
-      color: #e4e4e7;
-      border: 1px solid #333;
-      padding: 7px 16px;
-      border-radius: 9px;
-      font-size: 12.5px;
-      font-weight: 500;
-      box-shadow: 0 6px 24px rgba(0, 0, 0, .55);
-      white-space: nowrap;
-      max-width: 320px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      opacity: 0;
-      transform: translateY(-6px);
-      transition: opacity .16s ease, transform .16s ease;
-      pointer-events: none;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .toast.hiding {
-      opacity: 0;
-      transform: translateY(-6px);
-    }
-
-    .toast.t-success {
-      border-color: var(--success);
-      color: var(--success);
-    }
-
-    .toast.t-error {
-      border-color: var(--danger);
-      color: var(--danger);
-    }
-
-    .toast.t-info {
-      border-color: var(--info);
-      color: var(--info);
-    }
   </style>
 </head>
 
@@ -360,8 +302,6 @@
   <div id="accounts-panel">
     <div class="ap-inner" id="accounts-list-comp"></div>
   </div>
-
-  <div id="toast-area"></div>
 
   <script>
     let accounts = {};
@@ -471,21 +411,6 @@
       window.api.windowControl('close');
       await window.api.openInMain();
     });
-
-    function showToast(msg, type) {
-      const area = document.getElementById('toast-area');
-      const el = document.createElement('div');
-      el.className = 'toast' + (type ? ' t-' + type : '');
-      el.textContent = msg;
-      area.appendChild(el);
-      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
-      setTimeout(() => {
-        el.classList.remove('show');
-        el.classList.add('hiding');
-        setTimeout(() => el.remove(), 180);
-      }, 2800);
-    }
-    window.api.onCompanionToast((msg, type) => showToast(msg, type));
     function toast(msg, type = '') { window.api.showCompanionToast(msg, type); }
     function escHtml(s) {
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
