@@ -668,7 +668,7 @@ function createCompanionWindow() {
   const state = readJSON('companion-state.json', { url: CHATGPT_URL });
 
   companionWin = new BrowserWindow({
-    width: 398, height: 574, minWidth: 280, minHeight: 340,
+    width: 450, height: 650, minWidth: 280, minHeight: 340,
     frame: false, alwaysOnTop: true, show: false,
     backgroundColor: '#111111',
     webPreferences: {
