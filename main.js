@@ -1,6 +1,6 @@
 const {
   app, BrowserWindow, BrowserView, globalShortcut,
-  ipcMain, session, clipboard, dialog
+  ipcMain, session, clipboard, dialog, Tray, Menu
 } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -73,6 +73,7 @@ function writeJSON(file, data) {
 let mainWin = null;
 let companionWin = null;
 let prefsWin = null;
+let tray = null;
 let companionView = null;
 let companionVisible = false;
 let companionPanelH = 0;
@@ -1169,6 +1170,71 @@ ipcMain.handle('import-accounts', async () => {
   return { ok: true, added, conflicts: conflicts.length };
 });
 
+function createTray() {
+  // if (!app.isPackaged) return;
+
+  const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+  const iconPath = path.join(__dirname, 'assets', iconFile);
+
+  tray = new Tray(iconPath);
+  tray.setToolTip('ChatGPT Desktop Client');
+
+  function buildTrayMenu() {
+    return Menu.buildFromTemplate([
+      {
+        label: 'Open ChatGPT',
+        click: () => {
+          if (mainWin && !mainWin.isDestroyed()) {
+            if (mainWin.isMinimized()) mainWin.restore();
+            if (!mainWin.isVisible()) mainWin.show();
+            mainWin.focus();
+          } else {
+            createMainWindow();
+          }
+        },
+      },
+      {
+        label: companionVisible ? 'Hide Companion' : 'Show Companion',
+        click: () => toggleCompanion(),
+      },
+      { type: 'separator' },
+      {
+        label: 'Quit',
+        click: () => {
+          // allow will-quit to run normally
+          tray?.destroy();
+          tray = null;
+          app.quit();
+        },
+      },
+    ]);
+  }
+
+  // rebuild menu each time it's opened so the companion label stays current
+  tray.on('right-click', () => tray.setContextMenu(buildTrayMenu()));
+  tray.on('click', () => {
+    if (process.platform === 'darwin') {
+      // macOS: left-click pops the context menu (same as right-click)
+      tray.setContextMenu(buildTrayMenu());
+      tray.popUpContextMenu();
+    } else {
+      if (mainWin && !mainWin.isDestroyed()) {
+        if (mainWin.isVisible() && mainWin.isFocused()) {
+          mainWin.hide();
+        } else {
+          if (mainWin.isMinimized()) mainWin.restore();
+          mainWin.show();
+          mainWin.focus();
+        }
+      } else {
+        createMainWindow();
+      }
+    }
+  });
+
+  tray.setContextMenu(buildTrayMenu());
+}
+
 app.whenReady().then(() => {
   DATA_PATH = app.getPath('userData');
   accounts = readJSON('accounts.json', {});
@@ -1184,6 +1250,7 @@ app.whenReady().then(() => {
   createMainWindow();
   createCompanionWindow();
   registerGlobalKeybindings();
+  createTray();
 
   // startMinimized only applies when the OS launched the app at login,
   // not when the user opens it manually
@@ -1194,6 +1261,8 @@ app.whenReady().then(() => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  tray?.destroy();
+  tray = null;
   if (companionView) {
     const url = companionView.webContents.getURL();
     if (url && !url.startsWith('file://')) writeJSON('companion-state.json', { url });
