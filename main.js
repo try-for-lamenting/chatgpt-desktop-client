@@ -493,6 +493,125 @@ async function getShareLink() {
 
   return result;
 }
+async function getShareLinkFromCompanion() {
+  if (!companionView || companionView.webContents.isDestroyed()) return null;
+  const wc = companionView.webContents;
+
+  const currentUrl = wc.getURL();
+  if (isShareUrl(currentUrl)) return currentUrl;
+
+  await wc.executeJavaScript(`window.__interceptedShareUrl = null;`).catch(() => { });
+
+  wc.focus();
+
+  const clicked = await wc.executeJavaScript(`
+    (() => {
+      const btn =
+        document.querySelector('[data-testid="share-chat-button"]') ||
+        document.querySelector('[aria-label="Share"]');
+      if (!btn) return false;
+      btn.click();
+      return true;
+    })()
+  `).catch(() => false);
+  if (!clicked) return null;
+
+  const SHARE_TIMEOUT = 13000;
+  const SHARE_TICK = 200;
+  const methodA = (async () => {
+    let elapsed = 0;
+    while (elapsed < SHARE_TIMEOUT) {
+      await sleep(SHARE_TICK);
+      elapsed += SHARE_TICK;
+      const url = await wc.executeJavaScript(`window.__interceptedShareUrl || null`)
+        .catch(() => null);
+      if (url && isShareUrl(url)) return url;
+    }
+    return null;
+  })();
+
+  const methodB = (async () => {
+    const copyPos = await wc.executeJavaScript(`
+      new Promise(resolve => {
+        const TIMEOUT = 12000, TICK = 300;
+        let elapsed = 0;
+        function findBtn() {
+          const containers = [
+            ...Array.from(document.querySelectorAll('[role="dialog"][data-state="open"]')),
+            document.body
+          ];
+          for (const c of containers) {
+            for (const b of c.querySelectorAll('button')) {
+              if (!b.textContent.trim().includes('Copy link')) continue;
+              if (b.disabled) continue;
+              if (window.getComputedStyle(b).pointerEvents === 'none') continue;
+              const r = b.getBoundingClientRect();
+              if (r.width === 0 || r.height === 0) continue;
+              resolve({ x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) });
+              return true;
+            }
+          }
+          return false;
+        }
+        function poll() {
+          if (findBtn()) return;
+          elapsed += TICK;
+          if (elapsed >= TIMEOUT) { resolve(null); return; }
+          setTimeout(poll, TICK);
+        }
+        setTimeout(poll, 600);
+      })
+    `).catch(() => null);
+    if (!copyPos) return null;
+
+    wc.sendInputEvent({ type: 'mouseMove', x: copyPos.x, y: copyPos.y });
+    await sleep(60);
+    wc.sendInputEvent({ type: 'mouseDown', x: copyPos.x, y: copyPos.y, button: 'left', clickCount: 1 });
+    await sleep(80 + Math.round(Math.random() * 60));
+    wc.sendInputEvent({ type: 'mouseUp', x: copyPos.x, y: copyPos.y, button: 'left', clickCount: 1 });
+
+    await wc.executeJavaScript(`
+      new Promise(resolve => {
+        const TIMEOUT = 6000, TICK = 150;
+        let elapsed = 0;
+        function check() {
+          const found = Array.from(document.querySelectorAll('div,span,p'))
+            .some(el => { const t = el.textContent.trim(); return t === 'Link copied!' || t === 'Link copied'; });
+          if (found) { resolve(true); return; }
+          elapsed += TICK;
+          if (elapsed >= TIMEOUT) { resolve(false); return; }
+          setTimeout(check, TICK);
+        }
+        check();
+      })
+    `).catch(() => false);
+
+    await sleep(300);
+    const link = clipboard.readText();
+    return isShareUrl(link) ? link : null;
+  })();
+
+  const result = await new Promise(resolve => {
+    let settled = false;
+    let pending = 2;
+    function tryResolve(val) {
+      if (settled) return;
+      if (val && isShareUrl(val)) { settled = true; resolve(val); return; }
+      pending--;
+      if (pending === 0) resolve(null);
+    }
+    methodA.then(tryResolve).catch(() => tryResolve(null));
+    methodB.then(tryResolve).catch(() => tryResolve(null));
+  });
+
+  // dismiss share dialog
+  wc.executeJavaScript(`
+    document.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape',code:'Escape',bubbles:true,cancelable:true}));
+  `).catch(() => { });
+
+  return result;
+}
+
 function setCompanionViewBounds() {
   if (!companionWin || !companionView) return;
   const [cw, ch] = companionWin.getContentSize();
@@ -672,6 +791,7 @@ function createCompanionWindow() {
   companionWin = new BrowserWindow({
     width: 450, height: 650, minWidth: 280, minHeight: 340,
     frame: false, alwaysOnTop: true, show: false,
+    skipTaskbar: true,
     backgroundColor: '#111111',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -911,28 +1031,12 @@ ipcMain.handle('companion-panel-resize', (_, h) => {
   companionPanelH = h; setCompanionViewBounds();
 });
 
-ipcMain.handle('companion-switch-account', async (_, name) => {
-  accounts = readJSON('accounts.json', {});
-  const data = accounts[name];
-  if (!data) return { ok: false, error: 'Account not found' };
-  await clearCookies(COMPANION_PARTITION);
-  await restoreCookies(data.cookies, COMPANION_PARTITION);
-  await companionSession().cookies.flushStore();
-  companionView?.webContents.loadURL(CHATGPT_URL);
-  lastUsedAccount = name;
-  return { ok: true };
-});
-
 ipcMain.handle('companion-switch-with-context', async (_, name) => {
   accounts = readJSON('accounts.json', {});
   const data = accounts[name];
   if (!data) return { ok: false, error: 'Account not found' };
   let shareUrl = null;
-  const compUrl = companionView?.webContents.getURL();
-  if (isShareUrl(compUrl)) shareUrl = compUrl;
-  else if (mainWin && !mainWin.isDestroyed() && tabs.length > 0) {
-    try { shareUrl = await getShareLink(); } catch (_) { }
-  }
+  try { shareUrl = await getShareLinkFromCompanion(); } catch (_) { }
   await clearCookies(COMPANION_PARTITION);
   await restoreCookies(data.cookies, COMPANION_PARTITION);
   await companionSession().cookies.flushStore();
@@ -965,9 +1069,35 @@ ipcMain.handle('open-in-companion', async () => {
   return true;
 });
 
+function isCompanionChatUrl(url) {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    if (u.hostname !== 'chatgpt.com' && u.hostname !== 'chat.openai.com') return false;
+    return u.pathname.startsWith('/c/') || u.pathname.startsWith('/share/');
+  } catch (_) { return false; }
+}
+
 ipcMain.handle('open-in-main', async () => {
   const url = companionView?.webContents.getURL() || CHATGPT_URL;
   const cookies = await companionSession().cookies.get({});
+
+  // if the companion is on a non-chat page (login, home, etc.),
+  // just focus the main window without opening a new tab.
+  if (!isCompanionChatUrl(url) && !isShareUrl(url)) {
+    if (mainWin && !mainWin.isDestroyed()) {
+      if (tabs.length > 0) {
+        applyActiveTab();
+        pushTabsUpdate();
+        mainWin.show();
+        mainWin.focus();
+        return true;
+      }
+    } else {
+      createMainWindow();
+      return true;
+    }
+  }
 
   const tab = createTabView(CHATGPT_URL, null, { noSeed: true });
   await restoreCookies(cookies, tab.partition);

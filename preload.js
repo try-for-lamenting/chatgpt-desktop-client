@@ -24,7 +24,6 @@ contextBridge.exposeInMainWorld('api', {
   reloadCompanion: () => ipcRenderer.invoke('reload-companion'),
   focusCompanionView: () => ipcRenderer.invoke('focus-companion-view'),
   companionPanelResize: (h) => ipcRenderer.invoke('companion-panel-resize', h),
-  companionSwitchAccount: (name) => ipcRenderer.invoke('companion-switch-account', name),
   companionSwitchWithContext: (name) => ipcRenderer.invoke('companion-switch-with-context', name),
 
   exportAccounts: () => ipcRenderer.invoke('export-accounts'),
