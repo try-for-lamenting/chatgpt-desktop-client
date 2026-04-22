@@ -6,6 +6,9 @@ const path = require('path');
 const fs = require('fs');
 
 const LOGIN_ARG = '--login-launch';
+const DEFAULT_STARTUP_WINDOW_MODE = 'minimize';
+const STARTUP_WINDOW_MODES = new Set(['show', 'minimize', 'hide']);
+
 function isLoginItemEnabled() {
   try {
     return app.getLoginItemSettings({ args: [LOGIN_ARG] }).openAtLogin;
@@ -69,6 +72,23 @@ function readJSON(file, fallback) {
 function writeJSON(file, data) {
   try { fs.writeFileSync(path.join(DATA_PATH, file), JSON.stringify(data, null, 2)); }
   catch (e) { console.error('writeJSON:', e.message); }
+}
+function normalizeStartupWindowMode(mode) {
+  return STARTUP_WINDOW_MODES.has(mode) ? mode : DEFAULT_STARTUP_WINDOW_MODE;
+}
+function normalizeAppSettings(saved = {}) {
+  const startupWindowMode = typeof saved.startupWindowMode === 'string'
+    ? normalizeStartupWindowMode(saved.startupWindowMode)
+    : Object.prototype.hasOwnProperty.call(saved, 'startMinimized')
+      ? (saved.startMinimized ? 'minimize' : 'show')
+      : DEFAULT_STARTUP_WINDOW_MODE;
+
+  return {
+    openOnStartup: saved.openOnStartup !== false,
+    startupWindowMode,
+    companionOnTop: saved.companionOnTop !== false,
+    devToolsEnabled: saved.devToolsEnabled !== false,
+  };
 }
 let mainWin = null;
 let companionWin = null;
@@ -716,10 +736,12 @@ function createPreferencesWindow() {
   prefsWin.on('closed', () => { prefsWin = null; });
 }
 
-function createMainWindow() {
+function createMainWindow(options = {}) {
+  const { show = true, onReady = null } = options;
   mainWin = new BrowserWindow({
     width: 960, height: 800, minWidth: 800, minHeight: 500,
     frame: false, backgroundColor: '#111111',
+    show,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, nodeIntegration: false,
@@ -746,7 +768,7 @@ function createMainWindow() {
     mainWin.webContents.send('help-sidebar-state', helpSidebarOpen);
     mainWin.webContents.send('platform', process.platform);
     mainWin.webContents.send('keybindings-update', { keybindings, helpOverrides });
-
+    if (typeof onReady === 'function') onReady(mainWin);
   });
 
   mainWin.webContents.on('before-input-event', (event, input) => {
@@ -857,15 +879,30 @@ function createCompanionWindow() {
   companionWin.on('resize', () => {
     setCompanionViewBounds();
   });
+  companionWin.on('show', refreshCompanionLayout);
+  companionWin.on('restore', refreshCompanionLayout);
   companionWin.on('focus', focusCompanionView);
   companionWin.on('close', e => { e.preventDefault(); companionWin.hide(); companionVisible = false; });
 }
 
+function refreshCompanionLayout() {
+  const syncBounds = () => {
+    if (!companionWin || companionWin.isDestroyed()) return;
+    if (!companionView || companionView.webContents.isDestroyed()) return;
+    setCompanionViewBounds();
+  };
+
+  syncBounds();
+  [32, 96, 180].forEach(delay => setTimeout(syncBounds, delay));
+}
+
 function focusCompanionView() {
   if (!companionView || companionView.webContents.isDestroyed()) return;
+  refreshCompanionLayout();
   // small delay to give safety in finishing activating before stealing focus
   setImmediate(() => {
     if (!companionView || companionView.webContents.isDestroyed()) return;
+    setCompanionViewBounds();
     companionView.webContents.focus();
   });
 }
@@ -1247,15 +1284,25 @@ app.whenReady().then(() => {
     setLoginItem(appSettings.openOnStartup !== false);
   }
 
-  createMainWindow();
+  const launchedAtLogin = wasLaunchedAtLogin();
+  const startupWindowMode = launchedAtLogin
+    ? normalizeStartupWindowMode(appSettings.startupWindowMode)
+    : 'show';
+
+  createMainWindow({
+    show: startupWindowMode === 'show',
+    onReady: (win) => {
+      if (!win || win.isDestroyed()) return;
+      if (startupWindowMode === 'minimize') {
+        win.show();
+        win.minimize();
+      }
+    },
+  });
   createCompanionWindow();
   registerGlobalKeybindings();
   createTray();
 
-  // startMinimized only applies when the OS launched the app at login,
-  // not when the user opens it manually
-  const launchedAtLogin = wasLaunchedAtLogin();
-  if (appSettings.startMinimized && launchedAtLogin && mainWin) mainWin.minimize();
   if (!appSettings.companionOnTop && companionWin) companionWin.setAlwaysOnTop(false);
 });
 
@@ -1327,7 +1374,7 @@ ipcMain.handle('focus-companion-view', () => { focusCompanionView(); });
 
 const DEFAULT_SETTINGS = {
   openOnStartup: true,
-  startMinimized: true,
+  startupWindowMode: DEFAULT_STARTUP_WINDOW_MODE,
   companionOnTop: true,
   devToolsEnabled: true,
 };
@@ -1335,7 +1382,7 @@ let appSettings = { ...DEFAULT_SETTINGS };
 
 function loadAppSettings() {
   const saved = readJSON('settings.json', null);
-  if (saved) appSettings = { ...DEFAULT_SETTINGS, ...saved };
+  appSettings = normalizeAppSettings(saved || {});
 }
 function broadcastSettings() {
   [mainWin, companionWin, prefsWin].forEach(w => {
@@ -1351,7 +1398,7 @@ ipcMain.handle('get-app-settings', async () => {
 ipcMain.handle('get-default-settings', () => DEFAULT_SETTINGS);
 ipcMain.handle('save-app-settings', async (_, opts) => {
   const prev = appSettings.openOnStartup;
-  appSettings = { ...DEFAULT_SETTINGS, ...opts };
+  appSettings = normalizeAppSettings(opts || {});
   writeJSON('settings.json', appSettings);
   broadcastSettings();
   if (companionWin && !companionWin.isDestroyed())

@@ -387,6 +387,23 @@
       flex-shrink: 0;
     }
 
+    .opt-select {
+      min-width: 210px;
+      padding: 7px 9px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .opt-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+    }
+
     .opt-color {
       width: 36px;
       height: 28px;
@@ -641,9 +658,13 @@
           <input type="checkbox" class="opt-check" id="opt-open-on-startup">
         </div>
         <div class="opt-row">
-          <label for="opt-minimized">Start minimized<div class="opt-sub">Launch minimized to taskbar instead of visible
-            </div></label>
-          <input type="checkbox" class="opt-check" id="opt-minimized">
+          <label for="opt-startup-window-mode">Startup window<div class="opt-sub">Choose what happens to the main
+              window when the app is launched by the OS at login</div></label>
+          <select class="opt-select" id="opt-startup-window-mode">
+            <option value="show">Show main window</option>
+            <option value="minimize">Minimize main window</option>
+            <option value="hide">Do not open main window</option>
+          </select>
         </div>
 
         <div class="section-label" style="margin-top:20px;">Companion</div>
@@ -685,7 +706,7 @@
     // default settings for "reset to default"
     const DEFAULT_SETTINGS = {
       openOnStartup: true,
-      startMinimized: true,
+      startupWindowMode: 'minimize',
       companionOnTop: true,
       devToolsEnabled: true,
     };
@@ -873,7 +894,7 @@
     function populateOptions() {
       const s = currentOptions;
       document.getElementById('opt-open-on-startup').checked = s.openOnStartup !== false;
-      document.getElementById('opt-minimized').checked = !!s.startMinimized;
+      document.getElementById('opt-startup-window-mode').value = s.startupWindowMode || DEFAULT_SETTINGS.startupWindowMode;
       document.getElementById('opt-ontop').checked = s.companionOnTop !== false;
       document.getElementById('opt-devtools').checked = s.devToolsEnabled !== false;
     }
@@ -881,7 +902,7 @@
     function readOptions() {
       return {
         openOnStartup: document.getElementById('opt-open-on-startup').checked,
-        startMinimized: document.getElementById('opt-minimized').checked,
+        startupWindowMode: document.getElementById('opt-startup-window-mode').value,
         companionOnTop: document.getElementById('opt-ontop').checked,
         devToolsEnabled: document.getElementById('opt-devtools').checked,
       };
